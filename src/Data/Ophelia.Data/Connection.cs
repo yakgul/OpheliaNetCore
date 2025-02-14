@@ -114,7 +114,6 @@ namespace Ophelia.Data
         {
             var command = DbProviderFactories.GetFactory(this.InternalConnection).CreateCommand();
             command.Connection = this.InternalConnection;
-            if (this.Context.ExecutionTimeout > 0) command.CommandTimeout = this.Context.ExecutionTimeout;
             this.ValidateCurrentTransaction(command);
             return command;
         }
@@ -434,16 +433,16 @@ namespace Ophelia.Data
                 }
                 else if (value is DateTime || value is Nullable<DateTime>)
                 {
-                    var val = DateTime.MinValue;
+                    DateTime val = DateTime.MinValue;
                     if (value is DateTime)
-                        val = ((DateTime)value).SetKind(this.Context.Configuration.DateTimeKind);
-                    else if (value is DateTime?)
-                        val = ((DateTime?)value).GetValueOrDefault(DateTime.MinValue).SetKind(this.Context.Configuration.DateTimeKind);
+                        val = (DateTime)value;
+                    else if (value is Nullable<DateTime>)
+                        val = ((DateTime?)value).GetValueOrDefault(DateTime.MinValue);
 
                     if (val < this.Context.Configuration.MinDateTime)
-                        return this.Context.Configuration.MinDateTime.SetKind(this.Context.Configuration.DateTimeKind);
+                        return this.Context.Configuration.MinDateTime;
                     else if (val > this.Context.Configuration.MaxDateTime)
-                        return this.Context.Configuration.MaxDateTime.SetKind(this.Context.Configuration.DateTimeKind);
+                        return this.Context.Configuration.MaxDateTime;
                     return value;
                 }
             }
@@ -665,13 +664,9 @@ namespace Ophelia.Data
             }
             return this.GetMappedNamespace(schema);
         }
-        public PropertyInfo GetPrimaryKeyProp(Type type)
-        {
-            return Extensions.GetPrimaryKeyProperty(type);
-        }
         public string GetPrimaryKeyName(Type type)
         {
-            var pkPRoperty = this.GetPrimaryKeyProp(type);
+            var pkPRoperty = Extensions.GetPrimaryKeyProperty(type);
             if (this.Context.Configuration.PrimaryKeyContainsEntityName)
                 return this.FormatDataElement(this.GetMappedFieldName(type.Name + Extensions.GetColumnName(pkPRoperty)));
             else
@@ -823,10 +818,10 @@ namespace Ophelia.Data
 
         protected override void Dispose(bool disposing)
         {
-            if (this.Logger != null)
-                this.Logger.Dispose();
+            this.Logger.Dispose();
             this.Logger = null;
             base.Dispose(disposing);
+            GC.SuppressFinalize(this);
         }
     }
 }

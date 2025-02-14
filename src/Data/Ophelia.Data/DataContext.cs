@@ -181,13 +181,6 @@ namespace Ophelia.Data
             this.ContextEntities = new List<Type>();
             this.Configure();
             this._Connection = new Connection(this, this.GetDatabaseType(), this.GetConnectionString());
-            if (this.Connection.Type == DatabaseType.SQLServer || this.Connection.Type == DatabaseType.MySQL)
-                this.Configuration.DBIncrementedIdentityColumn = true;
-
-            if (this.Connection.Type == DatabaseType.PostgreSQL)
-                this.Configuration.DateTimeKind = DateTimeKind.Utc;
-            else
-                this.Configuration.DateTimeKind = DateTimeKind.Local;
         }
         protected virtual void Configure()
         {
@@ -245,14 +238,10 @@ namespace Ophelia.Data
             this.TableMap = null;
             this.NamespaceMap = null;
             this.ContextEntities = null;
-            if (this.RepositoryCache != null)
-                this.RepositoryCache.Clear();
+            this.RepositoryCache.Clear();
             this.RepositoryCache = null;
-            if (this.Connection != null)
-            {
-                this.Connection.Close();
-                this.Connection.Dispose();
-            }
+            this.Connection.Close();
+            this.Connection.Dispose();
         }
         public virtual void OnAfterEntityLoaded(object entity)
         {
@@ -319,30 +308,6 @@ namespace Ophelia.Data
         public QueryBuilder CreateSQLBuilder()
         {
             return QueryBuilder.Init(this);
-        }
-        public virtual string GetDateTimeDataType(bool isTimespan = false)
-        {
-            if (this.Connection.Type == DatabaseType.PostgreSQL)
-            {
-                if (isTimespan) return "timetz";
-                return "timestamptz";
-            }
-            else if (this.Connection.Type == DatabaseType.SQLServer)
-            {
-                if (isTimespan) return "time";
-                return "datetime2(7)";
-            }
-            else if (this.Connection.Type == DatabaseType.Oracle)
-            {
-                if (isTimespan) return "DATE";
-                return "DATE";
-            }
-            else if (this.Connection.Type == DatabaseType.MySQL)
-            {
-                if (isTimespan) return "TIME";
-                return "datetime";
-            }
-            return "";
         }
         public static void Close()
         {
